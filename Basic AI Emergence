@@ -1,0 +1,373 @@
+//Behavior of the base AI was defined here. Different types of AI were derived from this to create more interesting 
+//gameplay. This file tells the guard how to move when patroling and defines what happens when he is affected by 
+//the player's power up uses.
+
+
+#include "Guard.h"
+#include "../SGD Wrappers/SGD_GraphicsManager.h"
+#include "../SGD Wrappers/SGD_AudioManager.h"
+#include "../SGD Wrappers/SGD_InputManager.h"
+#include "../Animation/AnimManager.h"
+#include "../Camera/Camera.h"
+#include <math.h>
+
+#define TILE_SIZE 64
+#define STUN_RAD 64
+#define NOISE_RAD 256
+
+Guard::Guard() : Listener(this)
+{
+	//Guards care about these events
+	Listener::RegisterForEvent("PLAYER");
+	Listener::RegisterForEvent("DETECTED");
+	Listener::RegisterForEvent("LOST");
+	Listener::RegisterForEvent("POW_STUN");
+	Listener::RegisterForEvent("POW_NOISE");
+	Listener::RegisterForEvent("POW_DECOY");
+	Listener::RegisterForEvent("POW_NONE");
+
+	//Rectangle around guard
+	m_rCollisionRect = SGD::Rectangle(m_ptPosition, m_sSize);
+
+	//Two waypoints for the guard to walk back and forth between
+	m_ptWaypoint1 = SGD::Point(300, 200);
+	m_ptWaypoint2 = SGD::Point(120, 200);
+
+	m_fMagnitude = 175.0f;
+
+	m_fAngle = 30.0f;
+
+	m_fRadianAngle = m_fAngle * SGD::PI / 180.0f;
+
+	m_fSpeed = 50.0f;
+
+	//Direction guard is headed
+	m_fRotation = 0.0f;
+	m_fRestoreRotation = m_fRotation;
+
+	//Animations variables
+	m_aCurrAnimation.SetCurrentAnim(1);
+	m_aCurrAnimation.SetCurrentFrame(0);
+
+	//TEST
+	collided = SGD::Color(0, 255, 255);			//Color of collision box
+	collided = SGD::Color(100, 0, 255, 255);	//Color of collision box with alpha
+	detected = SGD::Color(255, 255, 255);		//Color of fov vectos
+}
+
+Guard::~Guard()
+{
+
+}
+
+void Guard::HandleCollision(const iEntity* pOther)
+{
+	collided = SGD::Color(100, 255, 0, 0);
+}
+
+// Entity Interface
+/*virtual*/ void Guard::Update(float _dt)
+{
+	if (m_bDisabled == false || m_nUsedPower != POW_STUN)
+	{
+		//Sets fov vectors based on the predefined angle and the rotation of the guard
+		m_vFieldofView1 = SGD::Vector(cosf(m_fRotation - m_fRadianAngle), sinf(m_fRotation - m_fRadianAngle));
+		m_vFieldofView2 = SGD::Vector(cosf(m_fRotation + m_fRadianAngle), sinf(m_fRotation + m_fRadianAngle));
+		//Adjusts length of fov1 vector 
+		m_vFieldofView1 *= m_fMagnitude;
+		//Moves fov1 vector as guard moves
+		m_vFieldofView1.x += m_ptPosition.x;
+		m_vFieldofView1.y += m_ptPosition.y;
+		//Adjusts length of fov2 vector 
+		m_vFieldofView2 *= m_fMagnitude;
+		//Moves fov2 vector as guard moves
+		m_vFieldofView2.x += m_ptPosition.x;
+		m_vFieldofView2.y += m_ptPosition.y;
+		//Sets guard's forward vector based on his rotation
+		m_vForwardVector = SGD::Vector(cosf(m_fRotation), sinf(m_fRotation));
+		//Updates velocity based on rotation and speed
+		m_vtVelocity = m_vForwardVector * m_fSpeed;
+
+		//If noisemaker is detonated...
+		if (m_bDisabled == true && m_nUsedPower == POW_NOISE)
+		{
+			//...stop movement
+			m_vtVelocity = { 0, 0 };
+		}
+
+		//If the player isn't null...
+		if (pPlayer != nullptr )
+		{
+			//...fill a vector to the player
+			toPlayer = pPlayer->GetPosition() - m_ptPosition;
+			
+			//If decoy power activated...
+			if (m_bDisabled == true && m_nUsedPower == POW_DECOY )
+			{
+				//...fill a vector to decoy
+				toDecoy = pDecoy->GetPosition() - m_ptPosition;
+			}
+
+			//If the player is in the guard's radius...
+			if (toPlayer.ComputeLength() < m_fMagnitude)
+			{
+				//...and the player is within the fov
+				if (toPlayer.ComputeAngle(m_vForwardVector) < m_fRadianAngle)
+				{
+					//fov vectors change to red
+					detected = SGD::Color(255, 0, 0);
+
+					//event broadcased to listeners
+					SGD::Event* pEvent = new SGD::Event("DETECTED");
+					pEvent->QueueEvent(nullptr);
+
+					//reset to no disability state
+					m_bDisabled = false;
+					m_nUsedPower = 100;
+				}
+				else
+				{
+					//fov vectors remain white
+					detected = SGD::Color(255, 255, 255);
+
+					//event broadcased to listeners
+					SGD::Event* pEvent = new SGD::Event("LOST");
+					pEvent->QueueEvent(nullptr);
+				}
+			}
+			else
+			{
+				//fov vectors remain white
+				detected = SGD::Color(255, 255, 255);
+
+				//event broadcased to listeners
+				SGD::Event* pEvent = new SGD::Event("LOST");
+				pEvent->QueueEvent(nullptr);
+			}
+
+			//If decoy power is activated...
+			if (m_bDisabled == true && m_nUsedPower == POW_DECOY)
+			{
+				//...and the decoy is in the guard's radius...
+				if (toDecoy.ComputeLength() < m_fMagnitude)
+				{
+					//...and the decoy is within the fov
+					if (toDecoy.ComputeAngle(m_vForwardVector) < m_fRadianAngle)
+					{
+						//Rotate to face decoy
+						m_fRotation = (toDecoy.ComputeAngle(SGD::Vector(1, 0)));
+
+						//If decoy is above the guard's y...
+						if (toDecoy.y < 0.0f)
+						{
+							//...correct rotation
+							m_fRotation = -m_fRotation;
+						}
+
+						//Sets guard's forward vector based on his rotation
+						m_vForwardVector = SGD::Vector(cosf(m_fRotation), sinf(m_fRotation));
+						//Updates velocity based on rotation and speed
+						m_vtVelocity = m_vForwardVector * m_fSpeed;
+
+						
+
+						//If guard is close or on decoy...
+						if (toDecoy.ComputeLength() <= 1.0f)
+						{
+							//...stop movement
+							m_vtVelocity = { 0, 0 };
+						}
+					}
+				}
+			}
+		}
+
+		if (m_bWaySwitch)
+		{
+			//vector to waypoint initialized to head to first waypoint
+			toWaypoint = m_ptWaypoint1 - m_ptPosition;
+		}
+		else
+		{
+			//vector to waypoint initialized to head to second waypoint
+			toWaypoint = m_ptWaypoint2 - m_ptPosition;
+		}
+
+		//If guard is at or really close to waypoint
+		if (toWaypoint.ComputeLength() <= 1.0f || m_fWayTimer >= 6.0f)
+		{
+			if (m_bDisabled == false || m_nUsedPower != POW_NOISE)
+			{
+				//switch to other waypoint
+				m_bWaySwitch = !m_bWaySwitch;
+
+				if (m_bWaySwitch)
+				{
+					//vector to waypoint initialized to head to first waypoint
+					toWaypoint = m_ptWaypoint1 - m_ptPosition;
+				}
+				else
+				{
+					//vector to waypoint initialized to head to second waypoint
+					toWaypoint = m_ptWaypoint2 - m_ptPosition;
+				}
+
+				//Change rotation to face new waypoint
+				m_fRotation = (toWaypoint.ComputeAngle(SGD::Vector(1, 0)));
+
+				//If waypoint is above guard's y...
+				if (toWaypoint.y < 0.0f)
+				{
+					//...correct rotation
+					m_fRotation = -m_fRotation;
+				}
+
+				m_fRestoreRotation = m_fRotation;
+				m_fWayTimer = 0.0f;
+			}
+		}
+
+		Entity::Update(_dt);
+
+		m_fWayTimer += _dt;
+
+		//Update position of collision rectangle
+		m_rCollisionRect = SGD::Rectangle(m_ptPosition, m_sSize);
+	}
+}
+/*virtual*/ void Guard::Render()
+{
+	SGD::Point cam = Camera::GetInstance()->GetCamera();
+
+	//Draws collision rectangle
+	SGD::GraphicsManager::GetInstance()->DrawRectangle(SGD::Rectangle(GetRect().left - (TILE_SIZE * 0.5f) - cam.x,
+		GetRect().top - (TILE_SIZE * 0.5f) - cam.y, GetRect().right - (TILE_SIZE * 0.5f) - cam.x, GetRect().bottom - (TILE_SIZE * 0.5f) -cam.y), collided);
+
+	//Draws fov1 vector
+	SGD::GraphicsManager::GetInstance()->DrawLine({ m_ptPosition.x - cam.x,
+		m_ptPosition.y - cam.y }, { m_vFieldofView1.x - cam.x, m_vFieldofView1.y - cam.y },
+		detected, 1U);
+
+	//Draws fov2 vector
+	SGD::GraphicsManager::GetInstance()->DrawLine({ m_ptPosition.x  - cam.x,
+		m_ptPosition.y - cam.y }, { m_vFieldofView2.x - cam.x, m_vFieldofView2.y - cam.y },
+		detected, 1U);
+
+	//Draws vector to player
+	if (pPlayer != nullptr)
+	{
+		SGD::GraphicsManager::GetInstance()->DrawLine({ m_ptPosition.x - cam.x,
+			m_ptPosition.y  - cam.y }, { pPlayer->GetPosition().x - cam.x , pPlayer->GetPosition().y - cam.y },
+			detected, 1U);
+	}
+
+	//Draws image
+	SGD::GraphicsManager::GetInstance()->DrawTexture(m_hImage,
+		SGD::Point(m_ptPosition.x - (TILE_SIZE * 0.5f) - cam.x, m_ptPosition.y - (TILE_SIZE * 0.5f) - cam.y), m_fRotation, { TILE_SIZE * 0.5f, TILE_SIZE * 0.5f }, {},
+		SGD::Size(1.0f, 1.0f));
+
+}
+
+void Guard::Attack()
+{
+
+}
+
+void Guard::Resume()
+{
+	 
+}
+
+void Guard::SetWaypoints(SGD::Point ptWay1, SGD::Point ptWay2)
+{
+	m_ptWaypoint1 = ptWay1;
+	m_ptWaypoint2 = ptWay2;
+}
+
+
+void Guard::HandleEvent( const SGD::Event* pEvent)
+{
+	if (pEvent->GetEventID() == "PLAYER")
+	{
+		//gets player identity for detection
+		pPlayer = (Player*)pEvent->GetSender();
+	}
+
+	if (pEvent->GetEventID() == "DETECTED")
+	{
+		Attack(); //activate chase mode
+
+		if( m_bDisabled == true && m_nUsedPower == POW_NOISE || m_nUsedPower == POW_DECOY )
+		{
+			SGD::Event * event = new SGD::Event("POW_NONE");
+			event->QueueEvent(nullptr);
+			event = nullptr;
+		}
+	}
+
+	if (pEvent->GetEventID() == "LOST")
+	{
+		Resume(); //resume patrol mode
+	}
+
+	if (pEvent->GetEventID() == "POW_STUN")
+	{
+		Power * pow = (Power*)pEvent->GetSender();
+
+		SGD::Vector toStun = pow->GetPosition() - m_ptPosition;
+
+		//If stun is detonated within viable radius...
+		if (toStun.ComputeLength() < STUN_RAD)
+		{
+			//...turn on stun state
+			m_bDisabled = true;
+			m_nUsedPower = POW_STUN;
+		}
+	}
+
+	if (pEvent->GetEventID() == "POW_NOISE")
+	{
+		Power * pow = (Power*)pEvent->GetSender();
+
+		SGD::Vector toNoise = pow->GetPosition() - m_ptPosition;
+
+		//If noisemaker is detonated within viable radius...
+		if (toNoise.ComputeLength() < NOISE_RAD)
+		{
+			//...rotate to face noisemaker
+			m_fRotation = (toNoise.ComputeAngle(SGD::Vector(1, 0)));
+
+			//If noisemaker is above the guard's y...
+			if (toNoise.y < 0.0f)
+			{
+				//...correct rotation
+				m_fRotation = -m_fRotation;
+			}
+			
+			//turn on noise state
+			m_bDisabled = true;
+			m_nUsedPower = POW_NOISE;
+		}
+	}
+
+	if (pEvent->GetEventID() == "POW_DECOY")
+	{
+		pDecoy = (Decoy*)pEvent->GetSender();
+
+		SGD::Vector toDecoy = pDecoy->GetPosition() - m_ptPosition;
+
+		//turn on decoy state
+		m_bDisabled = true;
+		m_nUsedPower = POW_DECOY;
+	}
+
+	if (pEvent->GetEventID() == "POW_NONE")
+	{
+		m_bDisabled = false;
+		m_nUsedPower = POW_NONE;
+
+		//Restore velocity
+		m_vtVelocity = m_vForwardVector * m_fSpeed;
+		m_fRotation = m_fRestoreRotation;
+	}
+}
