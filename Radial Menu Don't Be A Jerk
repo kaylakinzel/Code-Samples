@@ -1,0 +1,322 @@
+//In game pop up menu that had to have extremely fluid navigation with a clear design to avoid overwhelming the player
+//mid gameplay with complicated menu interaction.
+
+
+
+void CGameplayState::RenderLauncherHUD(CPlayer* pPlayer)
+{
+	CResourceManager * pResMan = pPlayer->GetResourceManager();
+
+	float m_fUpgradeRot;
+
+	if (pPlayer->GetPlayer1())
+		m_fUpgradeRot = m_fP1RecipeRot;
+	else
+		m_fUpgradeRot = m_fP2RecipeRot;
+
+	ID3D11ShaderResourceView * ShaderResource = nullptr;
+
+	RECT destRectFill;
+	destRectFill.bottom = LONG(Renderer->GetViewPort(EViewport::Top)->Height * 0.5f + 512.0f);
+	destRectFill.top = LONG(Renderer->GetViewPort(EViewport::Top)->Height * 0.5f - 0.0f);
+	destRectFill.left = LONG(Renderer->GetViewPort(EViewport::Top)->Width * 0.5f - 0.0f);
+	destRectFill.right = LONG(Renderer->GetViewPort(EViewport::Top)->Width * 0.5f + 512.0f);
+
+	m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+	ShaderResource = Renderer->GetTexture(RADIAL_OFFENSE_UI);
+	m_pSpriteBatch->Draw(ShaderResource, destRectFill, nullptr, Colors::White, 0.0f,
+		XMFLOAT2(256.0f, 256.0f/*Renderer->GetViewPort(EViewport::Top)->Width * 0.5f,
+							   Renderer->GetViewPort(EViewport::Top)->Height * 0.5f*/));
+	m_pSpriteBatch->End();
+
+	m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+	ShaderResource = Renderer->GetTexture(PIZZA_SELECTOR_UI);
+	m_pSpriteBatch->Draw(ShaderResource, destRectFill, nullptr, Colors::White, m_fUpgradeRot, XMFLOAT2(256.0f, 256.0f/*Renderer->GetViewPort(EViewport::Top)->Width * 0.5f, Renderer->GetViewPort(EViewport::Top)->Height * 0.5f*/));
+
+	m_pSpriteBatch->End();
+
+	destRectFill.bottom = LONG(Renderer->GetViewPort(EViewport::Top)->Height * 0.5f + 256.0f);
+	destRectFill.top = LONG(Renderer->GetViewPort(EViewport::Top)->Height * 0.5f - 256.0f);
+	destRectFill.left = LONG(Renderer->GetViewPort(EViewport::Top)->Width * 0.5f - 256.0f);
+	destRectFill.right = LONG(Renderer->GetViewPort(EViewport::Top)->Width * 0.5f + 256.0f);
+
+	if (pPlayer->GetHudItem() < 3)
+	{
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		RECT tinyRect;
+		tinyRect.top = LONG(destRectFill.top + 320.0f);
+		tinyRect.left = LONG(destRectFill.left + 175.0f);
+		tinyRect.bottom = LONG(tinyRect.top + 40.0f);
+		tinyRect.right = LONG(tinyRect.left + 40.0f);
+		ShaderResource = Renderer->GetTexture(POTATO_COUNTER_UI);
+		m_pSpriteBatch->Draw(ShaderResource, tinyRect);
+
+		m_pSpriteBatch->End();
+	}
+
+	switch (pPlayer->GetHudItem())
+	{
+	case 0:
+	{
+		m_fUpgradeRot = (3.14f * 0.5f) * 3;
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"EMP", XMFLOAT2(float(destRectFill.left) + 175.0f, float(destRectFill.top) + 175.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"Turns lights", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 200.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"off leaving", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 225.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"only flashlight", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 250.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+
+		std::wstringstream potato_stream;
+		potato_stream << "Cost: " << pResMan->m_nPrankCost[ItemEnum::EMP][pResMan->GetUpgradeNum(ItemEnum::EMP)];
+		std::wstring potato(potato_stream.str());
+
+		if (pPlayer->GetResourceManager()->GetPotatoCount() >= pResMan->m_nPrankCost[ItemEnum::EMP][pResMan->GetUpgradeNum(ItemEnum::EMP)])
+		{
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+		else
+		{
+			int m_nRemainder = pResMan->m_nPrankCost[ItemEnum::EMP][pResMan->GetUpgradeNum(ItemEnum::EMP)] - pPlayer->GetResourceManager()->GetPotatoCount();
+			std::wstringstream stream;
+			stream << "Get " << m_nRemainder << " more ";
+			std::wstring string(stream.str());
+
+			RECT destRect;
+			destRect.left = LONG(destRectFill.left + 160.0f);
+			destRect.top = LONG(destRectFill.top + 285.0f);
+			destRect.bottom = LONG(destRect.top + 30.0f);
+			destRect.right = LONG(destRect.left + 195.0f);
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			ShaderResource = Renderer->GetTexture(HEALTHBAR);
+			m_pSpriteBatch->Draw(ShaderResource, destRect, XMLoadFloat4(&XMFLOAT4(123123.0f, 12313.0f, 123123.0f, 123123.0f)));
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			RECT Rect;
+			Rect.top = LONG(destRectFill.top + 285.0f);
+			Rect.left = LONG(destRectFill.left + 315.0f);
+			Rect.bottom = LONG(Rect.top + 40.0f);
+			Rect.right = LONG(Rect.left + 40.0f);
+			ShaderResource = Renderer->GetTexture(POTATO_COUNTER_UI);
+			m_pSpriteBatch->Draw(ShaderResource, Rect);
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, string.c_str(), XMFLOAT2(float(destRectFill.left) + 160.0f, float(destRectFill.top) + 280.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, m_fP1CraftCraftedTimer)));
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+
+		break;
+	}
+	case 1:
+	{
+		m_fUpgradeRot = (3.14f * 0.5f) * 4;
+
+		std::wstringstream potato_stream;
+		potato_stream << "Cost: " << pResMan->m_nPrankCost[ItemEnum::BOOMBOX][pResMan->GetUpgradeNum(ItemEnum::BOOMBOX)];
+		std::wstring potato(potato_stream.str());
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"BOOMBOX", XMFLOAT2(float(destRectFill.left) + 175.0f, float(destRectFill.top) + 175.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"Spawn boombox", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 200.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"that sends", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 225.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"zombies", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 250.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+
+		m_pSpriteBatch->End();
+
+		if (pPlayer->GetResourceManager()->GetPotatoCount() >= pResMan->m_nPrankCost[ItemEnum::BOOMBOX][pResMan->GetUpgradeNum(ItemEnum::BOOMBOX)])
+		{
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+		else
+		{
+			int m_nRemainder = pResMan->m_nPrankCost[ItemEnum::BOOMBOX][pResMan->GetUpgradeNum(ItemEnum::BOOMBOX)] - pPlayer->GetResourceManager()->GetPotatoCount();
+			std::wstringstream stream;
+			stream << "Get " << m_nRemainder << " more ";
+			std::wstring string(stream.str());
+
+			RECT destRect;
+			destRect.left = LONG(destRectFill.left + 160.0f);
+			destRect.top = LONG(destRectFill.top + 285.0f);
+			destRect.bottom = LONG(destRect.top + 30.0f);
+			destRect.right = LONG(destRect.left + 195.0f);
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			ShaderResource = Renderer->GetTexture(HEALTHBAR);
+			m_pSpriteBatch->Draw(ShaderResource, destRect, XMLoadFloat4(&XMFLOAT4(123123.0f, 12313.0f, 123123.0f, 123123.0f)));
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			RECT Rect;
+			Rect.top = LONG(destRectFill.top + 285.0f);
+			Rect.left = LONG(destRectFill.left + 325.0f);
+			Rect.bottom = LONG(Rect.top + 40.0f);
+			Rect.right = LONG(Rect.left + 40.0f);
+			ShaderResource = Renderer->GetTexture(POTATO_COUNTER_UI);
+			m_pSpriteBatch->Draw(ShaderResource, Rect);
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, string.c_str(), XMFLOAT2(float(destRectFill.left) + 155.0f, float(destRectFill.top) + 280.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, m_fP1CraftCraftedTimer)));
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+
+		break;
+	}
+	case 2:
+	{
+		m_fUpgradeRot = (3.14f * 0.5f) * 1;
+
+		std::wstringstream potato_stream;
+		potato_stream << "Cost: " << pResMan->m_nPrankCost[ItemEnum::FLASHBANG][pResMan->GetUpgradeNum(ItemEnum::FLASHBANG)];
+		std::wstring potato(potato_stream.str());
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"FLASH BANG", XMFLOAT2(float(destRectFill.left) + 175.0f, float(destRectFill.top) + 175.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"Inverts controls", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 200.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"and flashes", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 225.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"screen whtie", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 250.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+
+		if (pPlayer->GetResourceManager()->GetPotatoCount() >= pResMan->m_nPrankCost[ItemEnum::FLASHBANG][pResMan->GetUpgradeNum(ItemEnum::FLASHBANG)])
+		{
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+		else
+		{
+			int m_nRemainder = pResMan->m_nPrankCost[ItemEnum::FLASHBANG][pResMan->GetUpgradeNum(ItemEnum::FLASHBANG)] - pPlayer->GetResourceManager()->GetPotatoCount();
+			std::wstringstream stream;
+			stream << "Get " << m_nRemainder << " more ";
+			std::wstring string(stream.str());
+
+			RECT destRect;
+			destRect.left = LONG(destRectFill.left + 160.0f);
+			destRect.top = LONG(destRectFill.top + 285.0f);
+			destRect.bottom = LONG(destRect.top + 30.0f);
+			destRect.right = LONG(destRect.left + 195.0f);
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			ShaderResource = Renderer->GetTexture(HEALTHBAR);
+			m_pSpriteBatch->Draw(ShaderResource, destRect, XMLoadFloat4(&XMFLOAT4(123123.0f, 12313.0f, 123123.0f, 123123.0f)));
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+			RECT Rect;
+			Rect.top = LONG(destRectFill.top + 285.0f);
+			Rect.left = LONG(destRectFill.left + 315.0f);
+			Rect.bottom = LONG(Rect.top + 40.0f);
+			Rect.right = LONG(Rect.left + 40.0f);
+			ShaderResource = Renderer->GetTexture(POTATO_COUNTER_UI);
+			m_pSpriteBatch->Draw(ShaderResource, Rect);
+
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, string.c_str(), XMFLOAT2(float(destRectFill.left) + 160.0f, float(destRectFill.top) + 280.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, m_fP1CraftCraftedTimer)));
+			m_pSpriteBatch->End();
+
+			m_pSpriteBatch->Begin();
+			m_pFontCalibri->DrawString(m_pSpriteBatch, potato.c_str(), XMFLOAT2(float(destRectFill.left) + 205.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)));
+			m_pSpriteBatch->End();
+		}
+
+		break;
+	}
+
+	case 3:
+	{
+		m_fUpgradeRot = (3.14f * 0.5f) * 2;
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"RETURN TO GAME", XMFLOAT2(float(destRectFill.left) + 125.0f, float(destRectFill.top) + 175.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+
+		break;
+	}
+	default:
+	{
+		m_fUpgradeRot = (3.14f * 0.5f) * 1;
+
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ShaderResource = Renderer->GetTexture(FLASH_BANG_INFO_UI);
+		m_pSpriteBatch->Draw(ShaderResource, destRectFill);
+
+		m_pSpriteBatch->End();
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"fishies", XMFLOAT2(float(destRectFill.left) + 275.0f, float(destRectFill.top) + 315.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+		break;
+	}
+	}
+
+	if (pPlayer->GetEMPCoolDown() > 0.0f)
+	{
+		std::wstringstream timer;
+		timer << (int(pPlayer->GetEMPCoolDown()) / 60 > 0 ? int(pPlayer->GetEMPCoolDown()) / 60 : 0) << ":" << (int(pPlayer->GetEMPCoolDown()) % 60 < 10 ? "0" : "") << int(pPlayer->GetEMPCoolDown()) % 60;
+		std::wstring time(timer.str());
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, time.c_str(), XMFLOAT2(float(destRectFill.left) + 35.0f, float(destRectFill.top) + 240.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+	}
+
+	if (pPlayer->GetBoomBoxCoolDown() > 0.0f)
+	{
+		std::wstringstream timer;
+		timer << (int(pPlayer->GetBoomBoxCoolDown()) / 60 > 0 ? int(pPlayer->GetBoomBoxCoolDown()) / 60 : 0) << ":" << (int(pPlayer->GetBoomBoxCoolDown()) % 60 < 10 ? "0" : "") << int(pPlayer->GetBoomBoxCoolDown()) % 60;
+		std::wstring time(timer.str());
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, time.c_str(), XMFLOAT2(float(destRectFill.left) + 220.0f, float(destRectFill.top) + 55.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+	}
+
+	if (pPlayer->GetFlashCoolDown() > 0.0f)
+	{
+		std::wstringstream timer;
+		timer << (int(pPlayer->GetFlashCoolDown()) / 60 > 0 ? int(pPlayer->GetFlashCoolDown()) / 60 : 0) << ":" << (int(pPlayer->GetFlashCoolDown()) % 60 < 10 ? "0" : "") << int(pPlayer->GetFlashCoolDown()) % 60;
+		std::wstring time(timer.str());
+
+		m_pSpriteBatch->Begin();
+		m_pFontCalibri->DrawString(m_pSpriteBatch, time.c_str(), XMFLOAT2(float(destRectFill.left) + 400.0f, float(destRectFill.top) + 240.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)));
+		m_pSpriteBatch->End();
+	}
+
+
+	if (pPlayer->GetPlayer1())
+		m_fP1RecipeRot = m_fUpgradeRot;
+	else
+		m_fP2RecipeRot = m_fUpgradeRot;
+}
