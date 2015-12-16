@@ -26,14 +26,13 @@ void CGameplayState::RenderLauncherHUD(CPlayer* pPlayer)
 
 	ShaderResource = Renderer->GetTexture(RADIAL_OFFENSE_UI);
 	m_pSpriteBatch->Draw(ShaderResource, destRectFill, nullptr, Colors::White, 0.0f,
-		XMFLOAT2(256.0f, 256.0f/*Renderer->GetViewPort(EViewport::Top)->Width * 0.5f,
-							   Renderer->GetViewPort(EViewport::Top)->Height * 0.5f*/));
+		XMFLOAT2(256.0f, 256.0f));
 	m_pSpriteBatch->End();
 
 	m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
 
 	ShaderResource = Renderer->GetTexture(PIZZA_SELECTOR_UI);
-	m_pSpriteBatch->Draw(ShaderResource, destRectFill, nullptr, Colors::White, m_fUpgradeRot, XMFLOAT2(256.0f, 256.0f/*Renderer->GetViewPort(EViewport::Top)->Width * 0.5f, Renderer->GetViewPort(EViewport::Top)->Height * 0.5f*/));
+	m_pSpriteBatch->Draw(ShaderResource, destRectFill, nullptr, Colors::White, m_fUpgradeRot, XMFLOAT2(256.0f, 256.0f));
 
 	m_pSpriteBatch->End();
 
