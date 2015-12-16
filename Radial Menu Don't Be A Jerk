@@ -200,7 +200,7 @@ void CGameplayState::RenderLauncherHUD(CPlayer* pPlayer)
 		m_pFontCalibri->DrawString(m_pSpriteBatch, L"FLASH BANG", XMFLOAT2(float(destRectFill.left) + 175.0f, float(destRectFill.top) + 175.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
 		m_pFontCalibri->DrawString(m_pSpriteBatch, L"Inverts controls", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 200.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
 		m_pFontCalibri->DrawString(m_pSpriteBatch, L"and flashes", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 225.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
-		m_pFontCalibri->DrawString(m_pSpriteBatch, L"screen whtie", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 250.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
+		m_pFontCalibri->DrawString(m_pSpriteBatch, L"screen white", XMFLOAT2(float(destRectFill.left) + 150.0f, float(destRectFill.top) + 250.0f), XMLoadFloat4(&XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)));
 		m_pSpriteBatch->End();
 
 		if (pPlayer->GetResourceManager()->GetPotatoCount() >= pResMan->m_nPrankCost[ItemEnum::FLASHBANG][pResMan->GetUpgradeNum(ItemEnum::FLASHBANG)])
