@@ -21,18 +21,6 @@ void CGameplayState::RenderStatsHUD(CPlayer* pPlayer)
 			//FLASHBANG STUFF
 			if (timer > 0.0f)
 			{
-				/*destRectFill.bottom = LONG(Renderer->GetViewPort(EViewport::Bottom)->Height);
-				destRectFill.top = LONG(0);
-				destRectFill.left = LONG(0);
-				destRectFill.right = LONG(Renderer->GetViewPort(EViewport::Bottom)->Width);
-
-				m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
-
-				ShaderResource = Renderer->GetTexture(FLASH_BANG_SCREEN_EFFECT);
-				m_pSpriteBatch->Draw(ShaderResource, destRectFill, XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 1.0f, timer)));
-
-				m_pSpriteBatch->End();*/
-
 				switch (pcPlayer2->GetResourceManager()->GetUpgradeNum(ItemEnum::FLASHBANG))
 				{
 				case 0:
@@ -87,15 +75,6 @@ void CGameplayState::RenderStatsHUD(CPlayer* pPlayer)
 		m_pSpriteBatch->Draw(ShaderResource, destRectFill);
 
 		m_pSpriteBatch->End();
-
-		//Health Debug Info
-		/*std::wstringstream _stream;
-		_stream << pcPlayer1->GetHealth();
-		std::wstring poop(_stream.str());
-
-		m_pSpriteBatch->Begin();
-		m_pFontCalibri->DrawString(m_pSpriteBatch, poop.c_str(), XMFLOAT2(float(destRectFill.left) + 60.0f, float(destRectFill.top)), XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)));
-		m_pSpriteBatch->End();*/
 
 		if (pcPlayer1->GetHealth() < (pcPlayer1->GetMaxHealth() * 0.35f))
 		{
@@ -198,10 +177,6 @@ void CGameplayState::RenderStatsHUD(CPlayer* pPlayer)
 		m_pSpriteBatch->Draw(ShaderResource, destRectFill);
 
 		m_pSpriteBatch->End();
-
-		/*m_pSpriteBatch->Begin();
-		m_pFontCalibri->DrawString(m_pSpriteBatch, L"HEALTH", XMFLOAT2(925.0f, float(destRectFill.top) + 10.0f), XMLoadFloat4(&XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)));
-		m_pSpriteBatch->End();*/
 
 		//POTATO COUNTER
 		destRectFill.top = LONG(p1_offset_h);
