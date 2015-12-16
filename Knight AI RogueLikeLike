@@ -1,0 +1,131 @@
+//This file defined the behaviot of a 2D Knight who would randomly find a nearby waypoint while "patroling" and, if the 
+//player was in range, he'd "chase" the player.
+
+
+using UnityEngine;
+using System.Collections;
+
+public class MetalKnightBehavior : MonoBehaviour {
+	
+	public float speed = 3;
+	public float attackRange = 10.0f;
+	
+	private Vector2 waypoint;
+	
+	private int maxhealth = 10;
+	private int currhealth;
+	
+	//Timer to delay enemy movement
+	public float startTimeout = 4.0f;
+	
+	//Time to change waypoints
+	private float waypointTimeout = 3.0f;
+	
+	private Vector2 toWaypoint;
+	
+	private GameObject player;
+	
+	private Collision enemy;
+
+	// Use this for initialization
+	void Start () {
+		Random.seed = (int)(Time.time);
+
+		currhealth = maxhealth;
+		
+		player = GameObject.FindGameObjectWithTag ("Player");
+	}
+	
+	void RandomizeWaypoint () {
+		//check to see if waypoint is within map?
+		
+		Vector2 thisPos = this.transform.position;
+
+		waypoint.x = (float)(Random.Range ((int)this.transform.position.x - 5, (int)this.transform.position.x + 5));
+		waypoint.y = (float)(Random.Range ((int)this.transform.position.y - 5, (int)this.transform.position.y + 5));
+
+		toWaypoint = waypoint - thisPos;
+		// get length of toWaypoint
+		float length = Mathf.Sqrt (Mathf.Pow (toWaypoint.x, 2) + Mathf.Pow (toWaypoint.y, 2));
+		toWaypoint.Normalize ();
+	
+		RaycastHit2D hit = Physics2D.Raycast(thisPos, toWaypoint, Mathf.Infinity, 8);
+
+		// If it hits something, re-randomize.
+		while (hit.collider != null) {
+			
+			waypoint.x = (float)(Random.Range ((int)this.transform.position.x - 5, (int)this.transform.position.x + 5));
+			waypoint.y = (float)(Random.Range ((int)this.transform.position.y - 5, (int)this.transform.position.y + 5));
+			
+			toWaypoint = waypoint - thisPos;
+			length = Mathf.Sqrt (Mathf.Pow (toWaypoint.x, 2) + Mathf.Pow (toWaypoint.y, 2));
+			toWaypoint.Normalize();
+
+			hit = Physics2D.Raycast(thisPos, toWaypoint, Mathf.Infinity, 8);
+		}
+	}
+	
+	void OnCollisionEnter (Collision col)
+	{
+		if(col.gameObject.name == "Wall")
+		{
+			RandomizeWaypoint();
+		}
+	}
+	
+	// Update is called once per frame
+	void FixedUpdate () {
+
+		if (startTimeout > 0.0f) {
+			
+			startTimeout -= Time.deltaTime;
+			
+		} else {
+			if (waypoint.Equals (Vector2.zero)) {
+				RandomizeWaypoint();
+			}
+
+			waypointTimeout -= Time.deltaTime;
+			
+			Vector2 playerPos = player.transform.position;
+			Vector2 thisPos = this.transform.position;
+			
+			//Vector between player and enemy
+			Vector2 toPlayer = playerPos - thisPos;
+			//Vector between waypoiny and enemy
+			toWaypoint = waypoint - thisPos;
+			
+			//if waypoint achieved and player is not near, randomize..
+			if (((toPlayer.x*toPlayer.x) + (toPlayer.y*toPlayer.y)) < attackRange && currhealth > 5) {
+				
+				toPlayer.Normalize ();
+				GetComponent<Rigidbody2D>().velocity = toPlayer * speed;
+				//RandomizeWaypoint ();
+				//waypointTimeout = 3.0f;
+				
+			}
+			//else if enemy is at waypoint, randomize waypoint
+			else if (waypointTimeout <= 0.0f) {
+				
+				RandomizeWaypoint ();
+				waypointTimeout = 3.0f;
+				
+			}	
+			//else achieve waypoint
+			else {
+				if( ((toWaypoint.x*toWaypoint.x) + (toWaypoint.y*toWaypoint.y)) > 0.5f ) {
+				
+					toWaypoint.Normalize ();
+					GetComponent<Rigidbody2D>().velocity = toWaypoint * speed;
+				
+				}
+			}
+			
+		}
+		
+	}
+	
+	void ApplyDamage(int damage) {
+		currhealth -= damage;
+	}
+}
