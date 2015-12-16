@@ -101,7 +101,7 @@ void CGameplayState::RenderCutscene2D()
 			m_fCutscene2SquishTimer = 500.0f;
 
 		rect_game.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height);
-		rect_game.top = LONG(-50 /** m_fCutscene2SquishTimer*/);
+		rect_game.top = LONG(-50);
 		rect_game.left = LONG(-m_fCutscene2SlideTimer);
 		rect_game.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width + m_fCutscene2SlideTimer);
 
