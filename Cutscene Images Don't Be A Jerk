@@ -1,0 +1,142 @@
+//Our cutscenes were a little boring, so I animated some 2D images to make them look fancier.
+
+
+void CGameplayState::RenderCutscene2D()
+{
+	if (!pcObjMan->GetCutsceneBOB())
+	{
+		//Brute
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ID3D11ShaderResourceView *  ShaderResource  = nullptr;
+		ShaderResource = Renderer->GetTexture(BRUTE_CUTSCENE_TEXT_1);
+
+		RECT rect_game;
+		rect_game.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height + m_fCutsceneShakeTimer);
+		rect_game.top = LONG(0 + m_fCutsceneShakeTimer);
+		rect_game.left = LONG(0 + m_fCutsceneShakeTimer);
+		rect_game.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width + m_fCutsceneShakeTimer);
+
+		DirectX::FXMVECTOR color = Colors::White;
+		DirectX::FXMVECTOR pos = XMLoadFloat2(&XMFLOAT2((float(rect_game.left)), (float(rect_game.top))));
+		DirectX::FXMVECTOR origin = XMLoadFloat2(&XMFLOAT2(0.0f, 0.0f));
+
+		m_pSpriteBatch->Draw(ShaderResource, pos, nullptr, color, 0.0f, origin, m_fCutsceneSmackTimer);
+
+		m_pSpriteBatch->End();
+
+		int modifier = 0;
+
+		if (m_fCutsceneShakeTimer)
+			modifier = rand() & 10 - 1;
+
+		if (modifier % 2)
+			m_fCutsceneShakeTimer = float(modifier);
+		else
+			m_fCutsceneShakeTimer = float(-modifier);
+
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ShaderResource = Renderer->GetTexture(BRUTE_CUTSCENE_TEXT_2);
+
+		if(m_fCutsceneSlideTimer == 0)
+			float amount = (m_fCutsceneSquishTimer += 1.0f);
+		else
+			float amount = 1;
+
+		if(m_fCutsceneSquishTimer == 500.0f)
+			m_fCutsceneSquishTimer = 500.0f;
+
+		rect_game.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height);
+		rect_game.top = LONG(-50 * m_fCutsceneSquishTimer);
+		rect_game.left = LONG(-m_fCutsceneSlideTimer);
+		rect_game.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width + m_fCutsceneSlideTimer);
+
+		m_pSpriteBatch->Draw(ShaderResource, rect_game);
+
+		m_pSpriteBatch->End();
+	}
+	else
+	{
+		//Bombie
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ID3D11ShaderResourceView *  ShaderResource = nullptr;
+		ShaderResource = Renderer->GetTexture(BOMBIE_CUTSCENE_TEXT_1);
+
+		RECT rect_game;
+		rect_game.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height + m_fCutscene2ShakeTimer);
+		rect_game.top = LONG(0 + m_fCutscene2ShakeTimer);
+		rect_game.left = LONG(0 + m_fCutscene2ShakeTimer);
+		rect_game.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width + m_fCutscene2ShakeTimer);
+
+		DirectX::FXMVECTOR color = Colors::White;
+		DirectX::FXMVECTOR pos = XMLoadFloat2(&XMFLOAT2((float(rect_game.left)), (float(rect_game.top))));
+		DirectX::FXMVECTOR origin = XMLoadFloat2(&XMFLOAT2(0.0f, 0.0f));
+
+		m_pSpriteBatch->Draw(ShaderResource, pos, nullptr, color, 0.0f, origin, m_fCutscene2SmackTimer);
+
+		m_pSpriteBatch->End();
+
+		int modifier = 0;
+
+		if (m_fCutscene2ShakeTimer)
+			modifier = rand() % 10 - 1;
+
+		if (modifier % 2)
+			m_fCutscene2ShakeTimer = float(modifier);
+		else
+			m_fCutscene2ShakeTimer = float(-modifier);
+
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ShaderResource = Renderer->GetTexture(BOMBIE_CUTSCENE_TEXT_2);
+
+		if (m_fCutscene2SlideTimer == 0)
+			float amount = (m_fCutscene2SquishTimer += 1.0f);
+		else
+			float amount = 1;
+
+		if (m_fCutscene2SquishTimer == 500.0f)
+			m_fCutscene2SquishTimer = 500.0f;
+
+		rect_game.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height);
+		rect_game.top = LONG(-50 /** m_fCutscene2SquishTimer*/);
+		rect_game.left = LONG(-m_fCutscene2SlideTimer);
+		rect_game.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width + m_fCutscene2SlideTimer);
+
+		m_pSpriteBatch->Draw(ShaderResource, rect_game);
+
+		m_pSpriteBatch->End();
+
+		m_pSpriteBatch->Begin(SpriteSortMode::SpriteSortMode_Texture, m_pStates->NonPremultiplied());
+
+		ShaderResource = Renderer->GetTexture(BOMBIE_CUTSCENE_TEXT_3);
+
+		int modifier2 = 0;
+
+		if (m_fCutscene2ShakeTimer)
+			modifier2 = rand() % 3;
+
+		RECT rect_game2;
+		rect_game2.bottom = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Height);
+		rect_game2.top = LONG(-30 + modifier2);
+		rect_game2.left = LONG(-30 + modifier2);
+		rect_game2.right = LONG(Renderer->GetViewPort(EViewport::Fullscreen)->Width);
+
+		DirectX::FXMVECTOR color2 = Colors::White;
+		DirectX::FXMVECTOR pos2 = XMLoadFloat2(&XMFLOAT2((float(rect_game2.left)), (float(rect_game2.top))));
+		DirectX::FXMVECTOR origin2 = XMLoadFloat2(&XMFLOAT2(0.0f, 0.0f));
+
+		m_pSpriteBatch->Draw(ShaderResource, pos2, nullptr, color2, 0.0f, origin2, m_fCutsceneDankTimer);
+
+		m_pSpriteBatch->End();
+
+		//
+
+		//if (modifier2 % 2)
+		//	band = (modifier2);
+		//else
+		//	band = (-modifier2);
+	}
+}
